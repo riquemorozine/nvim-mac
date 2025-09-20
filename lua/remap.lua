@@ -57,4 +57,10 @@ vim.keymap.set("n", "<leader>l", "<cmd>Floaterminal<CR>")
 vim.keymap.set("n", "]q", "<cmd>cnext<CR>")
 vim.keymap.set("n", "[q", "<cmd>cprevious<CR>")
 
+vim.keymap.set("n", "<C-s>", ":w<CR>", { noremap = true, silent = true })
+
+vim.keymap.set("n", "<leader>f", function()
+  vim.lsp.buf.format({ async = true })
+end, { desc = "Formatar com Biome" })
+
 vim.keymap.set("n", "<leader>z", "<cmd>ZenMode<CR>")
