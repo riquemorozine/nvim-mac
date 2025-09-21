@@ -1,4 +1,6 @@
+
 local opts = { noremap = true }
+
 
 local function no_border_telescope(picker_path)
   return function()
@@ -16,6 +18,9 @@ vim.g.mapleader=" "
 
 vim.keymap.set("n", "<leader>e", vim.cmd.Ex)
 
+vim.keymap.set("n", "K", vim.lsp.buf.hover, { desc = "Mostrar tipo / hover" })
+
+vim.keymap.set("n", "<leader>x", vim.diagnostic.open_float, { desc = "Mostrar erro" })
 -- Center after certain commands
 keymap("n", "<C-d>", "<C-d>zz", opts)
 keymap("n", "<C-u>", "<C-u>zz", opts)
@@ -59,7 +64,14 @@ vim.keymap.set("n", "[q", "<cmd>cprevious<CR>")
 
 vim.keymap.set("n", "<C-s>", ":w<CR>", { noremap = true, silent = true })
 
-vim.keymap.set("n", "<leader>f", function()
+local opts = { noremap = true, silent = true, buffer = bufnr }
+vim.keymap.set("n", "gd", vim.lsp.buf.definition, opts)
+vim.keymap.set("n", "K", vim.lsp.buf.hover, opts)
+vim.keymap.set("n", "<leader>ca", vim.lsp.buf.code_action, opts)
+vim.keymap.set("n", "<leader>ac", vim.lsp.completion.get, opts)
+
+
+vim.keymap.set("n", "<leader>ff", function()
   vim.lsp.buf.format({ async = true })
 end, { desc = "Formatar com Biome" })
 

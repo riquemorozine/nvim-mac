@@ -1,3 +1,5 @@
+
+
 local fn = vim.fn
 
 local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
@@ -36,6 +38,42 @@ require("lazy").setup({
     },
 
     {
+        "windwp/nvim-autopairs",
+        config = function()
+            require("nvim-autopairs").setup({
+                check_ts = true,  -- habilita integração com treesitter
+                fast_wrap = {},   -- permite "wrap" rápido de expressões
+            })
+        end,
+    },
+
+    {
+        "axelvc/template-string.nvim",
+        config = function()
+            require("template-string").setup({
+                filetypes = {
+                    "html",
+                    "typescript",
+                    "javascript",
+                    "typescriptreact",
+                    "javascriptreact",
+                    "vue",
+                    "svelte",
+                    "python",
+                    "cs",
+                }, -- filetypes where the plugin is active
+                jsx_brackets = true, -- must add brackets to JSX attributes
+                remove_template_string = false, -- remove backticks when there are no template strings
+                restore_quotes = {
+                    -- quotes used when "remove_template_string" option is enabled
+                    normal = [[']],
+                    jsx = [["]],
+                },
+            })
+        end,
+    },
+    
+    {
       "stevearc/overseer.nvim",
       config = true
     },
@@ -52,6 +90,35 @@ require("lazy").setup({
     {
         "jwalton512/vim-blade",
         ft = "blade"
+    },
+    {
+        "f-person/git-blame.nvim",
+        -- load the plugin at startup
+        event = "VeryLazy",
+        -- Because of the keys part, you will be lazy loading this plugin.
+        -- The plugin wil only load once one of the keys is used.
+        -- If you want to load the plugin at startup, add something like event = "VeryLazy",
+        -- or lazy = false. One of both options will work.
+        opts = {
+            -- your configuration comes here
+            -- for example
+            enabled = true, -- if you want to enable the plugin
+            message_template = " <summary> • <date> • <author> • <<sha>>", -- template for the blame message, check the Message template section for more options
+            date_format = "%d-%m-%Y %H:%M:%S", -- template for the date, check Date format section for more options
+            virtual_text_column = 1, -- virtual text start column, check Start virtual text at column section for more options
+        },
+    },
+    {
+        "windwp/nvim-ts-autotag",
+        config = function()
+            require("nvim-ts-autotag").setup({
+                opts = {
+                    enable_close = false,
+                    enable_rename = true,
+                    enable_close_on_slash = false
+                },
+            })
+        end,
     },
 
     {
@@ -79,10 +146,22 @@ require("lazy").setup({
 
     -- Treesitter
     {
-        'nvim-treesitter/nvim-treesitter',
-        build = ':TSUpdate'
+        "nvim-treesitter/nvim-treesitter",
+        build = ":TSUpdate",
+        opts = {
+            ensure_installed = {
+                "lua",
+                "typescript",
+                "javascript",
+                "json",
+                "prisma", -- ✅ adiciona o prisma
+            },
+            highlight = { enable = true },
+        },
     },
-
+    {
+        "pantharshit00/vim-prisma", -- ✅ highlight extra para .prisma
+    },
     'nvim-treesitter/playground',
     'nvim-treesitter/nvim-treesitter-textobjects',
 
@@ -128,29 +207,53 @@ require("lazy").setup({
         config = function()
             require('lsp-zero').setup()
 
--- plugin lspconfig
-    local lspconfig = require("lspconfig")
+            -- plugin lspconfig
+            local lspconfig = require("lspconfig")
 
-    lspconfig.biome.setup({
-        capabilities = capabilities,
-        workingDirectory = { mode = "auto" },
-        on_attach = function(client, bufnr)
-            client.server_capabilities.documentFormattingProvider = false
-            client.server_capabilities.documentRangeFormattingProvider = false
-        end,
-    })
-    
-    -- Habilita o servidor do TypeScript
-    lspconfig.ts_ls.setup {
-      on_attach = function(client, bufnr)
-        -- keymaps básicos LSP
-        local opts = { noremap = true, silent = true, buffer = bufnr }
-        vim.keymap.set("n", "gd", vim.lsp.buf.definition, opts)
-        vim.keymap.set("n", "K", vim.lsp.buf.hover, opts)
-        vim.keymap.set("n", "<leader>ca", vim.lsp.buf.code_action, opts)
-      end,
-    }
+            lspconfig.biome.setup({
+                capabilities = capabilities,
+                workingDirectory = { mode = "auto" },
+                on_attach = function(client, bufnr)
+                    client.server_capabilities.documentFormattingProvider = false
+                    client.server_capabilities.documentRangeFormattingProvider = false
+                end,
+            })
 
+
+            -- Configuração do servidor Prisma
+            lspconfig.prismals.setup{
+                on_attach = function(client, bufnr)
+                    print("Prisma LSP ativo!")
+                    -- Aqui você pode adicionar keymaps, etc
+                end,
+                settings = {
+                    prisma = {
+                        prismaFmtEnabled = true, -- habilita formatação
+                    }
+                }
+            }
+
+            -- Habilita o servidor do TypeScript
+            lspconfig.ts_ls.setup {
+                capabilities = capabilities,
+                workingDirectory = { mode = "auto" },
+                inlayHints = {
+                    includeInlayParameterNameHints = 'all',
+                    includeInlayParameterNameHintsWhenArgumentMatchesName = true,
+                    includeInlayFunctionParameterTypeHints = true,
+                    includeInlayVariableTypeHints = true,
+                    includeInlayVariableTypeHintsWhenTypeMatchesName = true,
+                    includeInlayPropertyDeclarationTypeHints = true,
+                    includeInlayFunctionLikeReturnTypeHints = true,
+                    includeInlayEnumMemberValueHints = true,
+                },
+                on_attach = function(client, bufnr)
+                    client.server_capabilities.documentFormattingProvider = false
+                    client.server_capabilities.documentRangeFormattingProvider = false
+                end,
+            }
+          
+      
            local lspconfig_defaults = require('lspconfig').util.default_config
             lspconfig_defaults.capabilities = vim.tbl_deep_extend(
               'force',
@@ -176,21 +279,22 @@ require("lazy").setup({
                 vim.keymap.set('n', '<F4>', '<cmd>lua vim.lsp.buf.code_action()<cr>', opts)
               end,
             })
-
             local cmp = require('cmp')
 
             cmp.setup({
-              sources = {
-                {name = 'nvim_lsp'},
-              },
-              snippet = {
-                expand = function(args)
-                  vim.snippet.expand(args.body)
-                end,
-              },
-              mapping = cmp.mapping.preset.insert({}),
+                sources = {
+                    { name = 'nvim_lsp' },
+                },
+                snippet = {
+                    expand = function(args)
+                        vim.snippet.expand(args.body) -- sua implementação atual
+                    end,
+                },
+                mapping = cmp.mapping.preset.insert({
+                    -- Mapeia Enter para confirmar autocomplete
+                    ['<CR>'] = cmp.mapping.confirm({ select = true }),
+                }),
             })
-
         end
     },
     'folke/zen-mode.nvim',
