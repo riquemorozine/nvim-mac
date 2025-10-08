@@ -93,8 +93,9 @@ vim.api.nvim_create_autocmd("BufWritePost", {
 })
 
 vim.api.nvim_create_autocmd("BufWritePre", {
-  pattern = { "*.ts", "*.tsx", "*.js", "*.jsx", "*.json" },
-  callback = function()
-    vim.lsp.buf.format({ async = false })
+  pattern = { "*.ts", "*.tsx", "*.js", "*.jsx", "*.json", "*.css", "*.html", "*.md" },
+  callback = function(args)
+    require("conform").format({ bufnr = args.buf })
   end,
 })
+

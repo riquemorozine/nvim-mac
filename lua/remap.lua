@@ -72,7 +72,7 @@ vim.keymap.set("n", "<leader>ac", vim.lsp.completion.get, opts)
 
 
 vim.keymap.set("n", "<leader>ff", function()
-  vim.lsp.buf.format({ async = true })
+  require("conform").format({ bufnr = 0 })
 end, { desc = "Formatar com Biome" })
 
 vim.keymap.set("n", "<leader>z", "<cmd>ZenMode<CR>")
