@@ -15,13 +15,18 @@ if not vim.loop.fs_stat(lazypath) then
 end
 vim.opt.rtp:prepend(lazypath)
 
+
+
 require("lazy").setup({
 
 
     'tpope/vim-dispatch',
 
     "lewis6991/gitsigns.nvim",
-
+    install={   install = { colorscheme = { "tokyonight", "catppuccin" } },},
+    ui={
+        border = "rounded",
+    },
     {
         'rcarriga/nvim-notify',
         config = function()
@@ -34,6 +39,76 @@ require("lazy").setup({
             })
             vim.notify = require("notify")
         end
+    },
+    {
+        "catppuccin/nvim",
+        lazy = true,
+        name = "catppuccin",
+        opts = {
+            transparent_background = true,
+            no_italic = true,
+            no_bold = false,
+            integrations = {
+                harpoon = true,
+                fidget = true,
+                cmp = true,
+                flash = true,
+                gitsigns = true,
+                illuminate = true,
+                indent_blankline = { enabled = true },
+                lsp_trouble = true,
+                mason = true,
+                mini = true,
+                native_lsp = {
+                    enabled = true,
+                    underlines = {
+                        errors = { "undercurl" },
+                        hints = { "undercurl" },
+                        warnings = { "undercurl" },
+                        information = { "undercurl" },
+                    },
+                },
+                navic = { enabled = true, custom_bg = "lualine" },
+                neotest = true,
+                noice = true,
+                notify = true,
+                neotree = true,
+                semantic_tokens = true,
+                telescope = true,
+                treesitter = true,
+                which_key = true,
+            },
+            highlight_overrides = {
+                all = function(colors)
+                    return {
+                        DiagnosticVirtualTextError = { bg = colors.none },
+                        DiagnosticVirtualTextWarn = { bg = colors.none },
+                        DiagnosticVirtualTextHint = { bg = colors.none },
+                        DiagnosticVirtualTextInfo = { bg = colors.none },
+                    }
+                end,
+            },
+            color_overrides = {
+                mocha = {
+                    -- I don't think these colours are pastel enough by default!
+                    peach = "#fcc6a7",
+                    green = "#d2fac5",
+                },
+            },
+        },
+    }, 
+    
+    {
+        {
+            "rachartier/tiny-inline-diagnostic.nvim",
+            event = "VeryLazy",
+            priority = 1000,
+            opts = {},
+        },
+        {
+            "neovim/nvim-lspconfig",
+            opts = { diagnostics = { virtual_text = false } },
+        },
     },
     {
         "supermaven-inc/supermaven-nvim",
@@ -84,10 +159,10 @@ require("lazy").setup({
             })
         end,
     },
-    
+    { "mistricky/codesnap.nvim", tag = "v2.0.0-beta.17" },
     {
-      "stevearc/overseer.nvim",
-      config = true
+        "stevearc/overseer.nvim",
+        config = true
     },
 
     {
@@ -117,7 +192,7 @@ require("lazy").setup({
             enabled = true, -- if you want to enable the plugin
             message_template = " <summary> • <date> • <author> • <<sha>>", -- template for the blame message, check the Message template section for more options
             date_format = "%d-%m-%Y %H:%M:%S", -- template for the date, check Date format section for more options
-            virtual_text_column = 1, -- virtual text start column, check Start virtual text at column section for more options
+            virtual_text_column = 200, -- virtual text start column, check Start virtual text at column section for more options
         },
     },
     {
@@ -160,16 +235,26 @@ require("lazy").setup({
     {
         "nvim-treesitter/nvim-treesitter",
         build = ":TSUpdate",
+        auto_install = true,
         opts = {
             ensure_installed = {
                 "lua",
                 "typescript",
                 "javascript",
                 "json",
-                "prisma", -- ✅ adiciona o prisma
+                "go",
+                "css",
+                "prisma", 
+                "html"
             },
             highlight = { enable = true },
+            autotag = { enable = true },
         },
+    },
+    {
+        "windwp/nvim-ts-autotag",
+        dependencies = "nvim-treesitter/nvim-treesitter",
+        config = true,
     },
     {
         "pantharshit00/vim-prisma", -- ✅ highlight extra para .prisma
@@ -179,7 +264,6 @@ require("lazy").setup({
 
     -- Undotree
     'mbbill/undotree',
-
     -- Telescope
     {
         'nvim-telescope/telescope.nvim', tag = '0.1.8',
@@ -287,6 +371,126 @@ require("lazy").setup({
         })
     end,
 },
+{
+	{
+		"neovim/nvim-lspconfig",
+		dependencies = {
+			"williamboman/mason.nvim",
+			"williamboman/mason-lspconfig.nvim",
+			"hrsh7th/cmp-nvim-lsp",
+			"hrsh7th/cmp-buffer",
+			"hrsh7th/cmp-path",
+			"hrsh7th/cmp-cmdline",
+			"hrsh7th/nvim-cmp",
+			"L3MON4D3/LuaSnip",
+			"saadparwaiz1/cmp_luasnip",
+			"j-hui/fidget.nvim",
+		},
+
+		config = function()
+			local cmp = require("cmp")
+			local cmp_lsp = require("cmp_nvim_lsp")
+			local capabilities = vim.tbl_deep_extend(
+				"force",
+				{},
+				vim.lsp.protocol.make_client_capabilities(),
+				cmp_lsp.default_capabilities()
+			)
+
+			require("fidget").setup({})
+			require("mason").setup()
+			require("mason-lspconfig").setup({
+				ensure_installed = {
+					"lua_ls",
+					"cssls",
+					"volar",
+					"intelephense",
+					"ts_ls",
+					"html",
+					"jsonls",
+					"eslint",
+					--"biome"
+				},
+        auto_update = false,
+				handlers = {
+					function(server_name) -- default handler (optional)
+						require("lspconfig")[server_name].setup({
+							capabilities = capabilities,
+						})
+					end,
+
+					["lua_ls"] = function()
+						local lspconfig = require("lspconfig")
+
+                        lspconfig.tailwindcss.setup({
+                            settings = {
+                                tailwindCSS = {
+                                    classFunctions = { "cva", "cx" },
+                                },
+                            },                       
+                        })
+
+						lspconfig.lua_ls.setup({
+							capabilities = capabilities,
+							settings = {
+								Lua = {
+									runtime = { version = "Lua 5.1" },
+									diagnostics = {
+										globals = { "bit", "vim", "it", "describe", "before_each", "after_each" },
+									},
+								},
+							},
+						})
+					end,
+
+					["ts_ls"] = function()
+						local lspconfig = require("lspconfig")
+						lspconfig.ts_ls.setup({
+							capabilities = capabilities,
+							workingDirectory = { mode = "auto" },
+							on_attach = function(client, bufnr)
+								client.server_capabilities.documentFormattingProvider = false
+								client.server_capabilities.documentRangeFormattingProvider = false
+							end,
+						})
+					end,
+
+					["biome"] = function()
+						require("lspconfig").biome.setup({
+							capabilities = capabilities,
+							workingDirectory = { mode = "auto" },
+							on_attach = function(client, bufnr)
+								client.server_capabilities.documentFormattingProvider = false
+								client.server_capabilities.documentRangeFormattingProvider = false
+							end,
+						})
+					end,
+
+					["eslint"] = function()
+						require("lspconfig").eslint.setup({
+							capabilities = capabilities,
+							on_attach = function(client, bufnr)
+								client.server_capabilities.documentFormattingProvider = false
+								client.server_capabilities.documentRangeFormattingProvider = false
+							end,
+						})
+					end,
+				},
+			})
+
+			vim.diagnostic.config({
+				float = {
+					focusable = false,
+					style = "minimal",
+					border = "rounded",
+					source = "always",
+					header = "",
+					prefix = "",
+				},
+			})
+		end,
+	},
+},
 -- LSP Config
 {
     'VonHeikemen/lsp-zero.nvim',
@@ -313,26 +517,9 @@ require("lazy").setup({
             require('lsp-zero').setup()
 
             -- plugin lspconfig
-            local lspconfig = require("lspconfig")
+           local lspconfig = require('lspconfig')
 
-            lspconfig.biome.setup({
-                capabilities = capabilities,
-                workingDirectory = { mode = "auto" },
-                on_attach = function(client, bufnr)
-                    client.server_capabilities.documentFormattingProvider = true 
-                    client.server_capabilities.documentRangeFormattingProvider = true 
-                end,
-            })
-
-            lspconfig.eslint.setup({
-                capabilities = capabilities,
-                on_attach = function(client, bufnr)
-                    client.server_capabilities.documentFormattingProvider = false
-                    client.server_capabilities.documentRangeFormattingProvider = false
-                end,
-            })
-
-            -- Configuração do servidor Prisma
+               -- Configuração do servidor Prisma
             lspconfig.prismals.setup{
                 on_attach = function(client, bufnr)
                     print("Prisma LSP ativo!")
@@ -348,25 +535,7 @@ require("lazy").setup({
 
 
             -- Habilita o servidor do TypeScript
-            lspconfig.ts_ls.setup {
-                capabilities = capabilities,
-                workingDirectory = { mode = "auto" },
-                inlayHints = {
-                    includeInlayParameterNameHints = 'all',
-                    includeInlayParameterNameHintsWhenArgumentMatchesName = true,
-                    includeInlayFunctionParameterTypeHints = true,
-                    includeInlayVariableTypeHints = true,
-                    includeInlayVariableTypeHintsWhenTypeMatchesName = true,
-                    includeInlayPropertyDeclarationTypeHints = true,
-                    includeInlayFunctionLikeReturnTypeHints = true,
-                    includeInlayEnumMemberValueHints = true,
-                },
-                on_attach = function(client, bufnr)
-                    client.server_capabilities.documentFormattingProvider = false
-                    client.server_capabilities.documentRangeFormattingProvider = false
-                end,
-            }
-          
+         
       
            local lspconfig_defaults = require('lspconfig').util.default_config
             lspconfig_defaults.capabilities = vim.tbl_deep_extend(
